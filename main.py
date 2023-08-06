@@ -49,24 +49,56 @@ def account_refill(client):
 
 def withdraw(client):
     client_data = client.split(';')
-    balance = int(client_data[2])
+    balance = float(client_data[2])
 
     print(client_data[0])
     print(f'\nВаш баланс: {client_data[2]}$')
 
-    sum_for_withdraw = int(input('Введите сумму для вывода: '))
-    if sum_for_withdraw <= balance:
-        print(f'\nВыдача {sum_for_withdraw}$')
-        # обновление баланса клиента после выдачи средств
-        balance -= sum_for_withdraw
-        client_data[2] = str(balance)
-        print(f'Остаток на балансе: {balance}')
-        client = ';'.join(client_data)
-        write_client_file(client)
-        return client
+    sum_for_withdraw = float(input('Введите сумму для вывода: '))
+
+    if sum_for_withdraw % 50 == 0:
+        if sum_for_withdraw <= balance:
+            print(f'\nВыдача {sum_for_withdraw}$')
+
+            # процент за снятие
+            percent = 0.015
+            # изменение процента от суммы
+            if sum_for_withdraw > 5000000:
+                percent = 0.1
+
+            # расчет суммы процента
+            sum_percent = sum_for_withdraw * percent
+            if sum_percent < 30:
+                sum_percent = 30
+            elif sum_percent > 600:
+                sum_percent = 600
+
+            # обновление баланса клиента после выдачи средств
+            balance -= (sum_for_withdraw + sum_percent)
+            print(f'Остаток на балансе: {balance}\nПроцент за снятие: {sum_percent}')
+
+            # обновление информации о данных третьей операции
+            third_operation = int(client_data[3])
+            if third_operation == 3:
+                print(f'Бонус за 3ю операцию: {balance * 0.03}')
+                balance += balance * 0.03
+                third_operation = 0
+                client_data[3] = str(third_operation)
+            else:
+                third_operation += 1
+                client_data[3] = str(third_operation)
+
+            # подготовка информации к записи в файл
+            client_data[2] = str(balance)
+            client = ';'.join(client_data)
+            write_client_file(client)
+            return client
+        else:
+            print('\nНедостаточно средств!')
+            return
     else:
-        print('\nНедостаточно средств!')
-        return
+        print('Сумма должна быть кратна 50!')
+        return client
 
 
 def main():
